@@ -1,7 +1,11 @@
 %{
 
 #include <iostream>
-#include "output.hpp"
+#include "hw3_output.hpp"
+#include "TypeBase.h"
+
+#define YYSTYPE ypeBase*;
+
 int yylex();
 void yyerror (const char*);
 extern int yylineno;

@@ -11,11 +11,16 @@
 
 class SymbolTableStack
 {
-    std::stack<SymbolTableNode> _symbolTableStack;
+    std::stack<std::shared_ptr<SymbolTableNode>> _symbolTableStack;
+
+    static void updateTable(const std::shared_ptr<SymbolTableNode> &table, const std::string &name,
+                     const std::shared_ptr<TypeBase> &type, const int offset);
 
 public:
-    void MakeTable(SymbolTableNode& parent);
-    void Insert(SymbolTableNode& table, const std::string& name, const std::shared_ptr<TypeBase>& type, int offset);
+    static std::shared_ptr<SymbolTableNode> MakeTable(std::shared_ptr<SymbolTableNode> parent);
+    void Insert(const std::shared_ptr<SymbolTableNode>& table, const std::string& name, const std::shared_ptr<TypeBase>& type,
+                const int offset);
+
 };
 
 #endif //HW3_SYMBOLTABLESTACK_H

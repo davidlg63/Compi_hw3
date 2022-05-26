@@ -14,7 +14,7 @@ struct SymbolTableNode
     std::string name;
     std::shared_ptr<TypeBase> type;
     int offset;
-    std::unique_ptr<SymbolTableNode> parent;
+    std::shared_ptr<SymbolTableNode> parent;
 }
 
 #endif //HW3_SYMBOLTABLENODE_H
