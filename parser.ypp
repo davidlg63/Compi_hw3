@@ -2,13 +2,16 @@
 
 #include <iostream>
 #include "hw3_output.hpp"
-#include "TypeBase.h"
+#include "NonTerminalBase.h"
+#include "SymbolTableManager.h"
 
-#define YYSTYPE ypeBase*;
+#define YYSTYPE NonTerminalBase*;
 
 int yylex();
 void yyerror (const char*);
+void InsertPrintFunctions();
 extern int yylineno;
+SymbolTableManager* symbolTableManager = new SymbolTableManager();
 
 %}
 
@@ -44,7 +47,7 @@ extern int yylineno;
 %left RBRACE
 %right ELSE
 %%
-    Program: Funcs	{output::printProductionRule(1);}
+    Program: {symbolTableManager->openScope(); InsertPrintFunctions();} Funcs	{output::printProductionRule(1);}
 	;
 	
     Funcs: /*epsilon*/ 	{output::printProductionRule(2);} |
@@ -81,7 +84,7 @@ extern int yylineno;
 				
 				
 	Statement:
-				LBRACE Statements RBRACE	{output::printProductionRule(14);} |
+				LBRACE {symbolTableManager->openScope();} Statements RBRACE	{symbolTableManager->closeScope();} |
 				Type ID SC	{output::printProductionRule(15);} |
 				Type ID ASSIGN Exp SC	{output::printProductionRule(16);} |
 				AUTO ID ASSIGN Exp SC	{output::printProductionRule(17);} |
@@ -89,9 +92,9 @@ extern int yylineno;
 				Call SC	{output::printProductionRule(19);} |
 				RETURN SC	{output::printProductionRule(20);} |
 				RETURN Exp SC	{output::printProductionRule(21);} |
-				IF LPAREN Exp RPAREN Statement  {output::printProductionRule(22);} |                               
-				IF LPAREN Exp RPAREN Statement ELSE Statement	{output::printProductionRule(23);} |
-				WHILE LPAREN Exp RPAREN Statement	{output::printProductionRule(24);} |
+				IF IF_Marker LPAREN Exp RPAREN Statement  {symbolTableManager->closeScope();} |                               
+				IF IF_Marker LPAREN Exp RPAREN Statement ELSE {symbolTableManager->openScope();} Statement	{symbolTableManager->closeScope();} |
+				WHILE {symbolTableManager->openScope();} LPAREN Exp RPAREN Statement	{symbolTableManager->closeScope();} |
 				BREAK SC	{output::printProductionRule(25);} |
 				CONTINUE SC	{output::printProductionRule(26);}
 				;
@@ -130,6 +133,8 @@ extern int yylineno;
          LPAREN Type RPAREN Exp	{output::printProductionRule(47);}
 		 ;
 		 
+	IF_Marker: /*epsilon*/ {symbolTableManager->openScope();}
+		 
 
 %%
 
@@ -142,4 +147,13 @@ void yyerror(const char* message)
 {
     output::errorSyn(yylineno);
     exit(1);
+}
+
+void InsertPrintFunctions()
+{
+	std::shared_ptr<SymbolTable> currentTable = symbolTableManager->top();
+	std::vector<Type_> printParams = std::vector<Type_>(1, Type_::TYPE_STRING);
+	currentTable->Insert("print", Type_::TYPE_VOID, 0, printParams);
+	std::vector<Type_> printIParams = std::vector<Type_>(1, Type_::TYPE_INT);
+	currentTable->Insert("printi", Type_::TYPE_VOID, 0, printIParams);
 }

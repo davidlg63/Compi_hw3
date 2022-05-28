@@ -5,9 +5,10 @@
 #ifndef HW3_TYPEBASE_H
 #define HW3_TYPEBASE_H
 
-class TypeBase {
+class NonTerminalBase {
     public:
-        virtual ~TypeBase() = default;
+
+        virtual ~NonTerminalBase() = default;
 };
 
 #endif //HW3_TYPEBASE_H
