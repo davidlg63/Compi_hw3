@@ -74,7 +74,7 @@ SymbolTableManager* symbolTableManager = new SymbolTableManager();
 				;
 				
 				
-    FormalDecl: Type ID	{output::printProductionRule(11);}
+    FormalDecl: Type ID	{if(symbolTableManager->IdIsAlreadyDeclared($2)) /*error*/}
 	;
 	
 	

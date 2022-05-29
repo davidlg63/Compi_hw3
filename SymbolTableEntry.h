@@ -14,9 +14,8 @@ struct SymbolTableEntry{
     std::string name;
     Type_ type;
     int offset;
-    std::vector<Type_> params;
 
-    SymbolTableEntry(const std::string& name, const Type_ type, int offset, const std::vector<Type_>& params);
+    SymbolTableEntry(const std::string& name, const Type_ type, int offset);
 };
 
 #endif //HW3_OUTPUT_CPP_SYMBOLTABLEENTRY_H

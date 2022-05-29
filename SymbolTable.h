@@ -18,6 +18,7 @@ public:
     std::shared_ptr<SymbolTable> parent;
 
     explicit SymbolTable(std::shared_ptr<SymbolTable> parent);
+    void Insert(const std::string& name, const Type_ type, const int offset);
     void Insert(const std::string& name, const Type_ type, const int offset, const std::vector<Type_>& params = std::vector<Type_>());
 };
 

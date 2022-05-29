@@ -4,7 +4,7 @@
 
 #include "SymbolTableEntry.h"
 
-SymbolTableEntry::SymbolTableEntry(const std::string &_name, const Type_ _type, const int _offset, const std::vector<Type_>& _params) :
-        name(_name), type(_type), offset(_offset), params(_params)
+SymbolTableEntry::SymbolTableEntry(const std::string &_name, const Type_ _type, const int _offset) :
+        name(_name), type(_type), offset(_offset)
 {}
 

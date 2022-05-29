@@ -23,6 +23,7 @@ public:
     void openScope();
     void closeScope();
     int getOffset();
+    bool IdIsAlreadyDeclared(int id);
 };
 
 #endif //HW3_SYMBOLTABLESTACK_H
