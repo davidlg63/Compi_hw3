@@ -2,29 +2,25 @@
 
 #include <iostream>
 #include "hw3_output.hpp"
-<<<<<<< HEAD
 #include "NonTerminalBase.h"
 #include "SymbolTableManager.h"
 
 #define YYSTYPE NonTerminalBase*;
-=======
-#include "TypeBase.h"
 
-#define YYSTYPE ypeBase*;
->>>>>>> master
+using std::string;
 
 int yylex();
 void yyerror (const char*);
 void InsertPrintFunctions();
 extern int yylineno;
-SymbolTableManager* symbolTableManager = new SymbolTableManager();
+SymbolTableManager symbolTableManager = new SymbolTableManager();
 
-void CheckType( _TYPE target, _TYPE given);
-void checkIfVarExists(_TYPE type, string name);
-void MakeDeclaration(_TYPE type, string name);
-void checkIfFuncExist(string name, std:vector<_TYPE> params);
-void CheckIfAssignmentValid(_TYPE type1, std::string name, _TYPE type2);
-void checkIfNumType(_TYPE type);
+void CheckType( Type_ target, Type_ given);
+void checkIfVarExists(Type_ type, string name);
+void MakeDeclaration(Type_ type, string name);
+void checkIfFuncExist(string name, std:vector<Type_> params);
+void CheckIfAssignmentValid(Type_ type1, std::string name, Type_ type2);
+void checkIfNumType(Type_ type);
 
 %}
 
@@ -60,23 +56,27 @@ void checkIfNumType(_TYPE type);
 %left RBRACE
 %right ELSE
 %%
-    Program: Funcs	                                            {_if(Type::TYPE_VOID != DAVID_RESP.doesFunctionExist("main", vector<Type_>())) {output::errorMainMissing(); exit(1);}
-                                                                DAVID_RESP.createParamsFrame();}
+    Program: {symbolTableManager.openScope();} Funcs 	        {
+																	if(Type::TYPE_VOID != symbolTableManager.doesFunctionExist("main", vector<Type_>())) {output::errorMainMissing(); exit(1);}
+																	symbolTableManager.closeScope();
+																}
             ;
->>>>>>> master
 	
     Funcs:                   	                                {}
 			| FuncDecl Funcs	                                {}
 	        ;
 			
 			
-    FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE	{check_if_exist($1,$2->name,$3->paramList);
-                                                                        {DAVID_RESP.insertFuncToTable($1->type,$2->name,$3->paramList);}
+    FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE	{
+																			NonTerminal_RetType* retType = dynamic_cast<NonTerminal_RetType*>($1);
+																		
+																			check_if_exist($1,Type->name,$3->paramList);
+																			DAVID_RESP.insertFuncToTable($1->type,Type->name,$3->paramList);}
 	        ;
 	
 	            ///david needs to create RetType!
     RetType: Type	                                            {$$ = new RetType; $$->type = $1->type;} |
-			 VOID	                                            {$$ = new RetType; $$->type = _TYPE::TYPE_VOID;}
+			 VOID	                                            {$$ = new RetType; $$->type = Type_::TYPE_VOID;}
 			 ;
 			 
 			 ///david needs to create ParamList! a field of the type of list needs to be there
@@ -94,11 +94,11 @@ void checkIfNumType(_TYPE type);
 				                                                $$-> names_in_list = $3-> names_in_list}
 				;
 				
-    FormalDecl: Type ID	                                        {checkIfVarExists($1 -> type, $2 -> name)
-                                                                $$ = new Param($1 -> type, $2 -> name));
-                                                                DavidResp.insertVarToTable($$)}
-
->>>>>>> master
+    FormalDecl: Type ID	                                        {NonTerminalType* Type = dynamic_cast<NonTerminalType*>($1); TerminalID* Id = dynamic_cast<TerminalID*>(Type);
+																checkIfVarExists(Type -> type, Id -> name);
+                                                                $$ = new NonTerminalVar(Type -> type, Id -> name));
+																int offset = symbolTableManager.getOffset();
+                                                                symbolTableManager.top()->Insert($$->name, $$->type, offset);}
 	;
 	
 	
@@ -109,76 +109,78 @@ void checkIfNumType(_TYPE type);
 				
 	Statement:
 				LBRACE Statements RBRACE	                    {output::printProductionRule(14);} |
-				Type ID SC	                                    {MakeDeclaration($1->type, $2->name);} |
+				Type ID SC	                                    {MakeDeclaration($1->type, Type->name);} |
 				Type ID ASSIGN Exp SC	                        {void CheckType( $1->type, $4->type);
-				                                                MakeDeclaration($1->type, $2->name);} |
-				AUTO ID ASSIGN Exp SC	                        {MakeDeclaration( $4->type,$2->name);} |
+				                                                MakeDeclaration($1->type, Type->name);} |
+				AUTO ID ASSIGN Exp SC	                        {MakeDeclaration( $4->type,Type->name);} |
 				ID ASSIGN Exp SC                	            {CheckIfAssignmentValid($1->type, $1->name, $3->type);} |
 				Call SC	                                        {output::printProductionRule(19);} |
-				RETURN SC	                                    {if(DAVID_RESP.FindFuncRetType() != _TYPE::TYPE_VOID){output::errorMismatch(yylineno); exit(1);}} |
-				RETURN Exp SC	                                {if((DAVID_RESP.FindFuncRetType() != $2->type) ||
-				                                                (!($2->type == _TYPE::TYPE_BYTE && DAVID_RESP.GetCurFuncRetType() == TYPE::TYPE_INT)&&
-				                                                !($2->type == _TYPE::TYPE_INT && DAVID_RESP.GetCurFuncRetType() == TYPE::TYPE_BYTE)))
-				                                                {output::errorMismatch(yylineno); exit(1);}}  |
-				IF IF_Marker LPAREN Exp RPAREN Statement                  {CheckType($3->type, _TYPE::TYPE_BOOL);} |
-				IF IF_Marker LPAREN Exp RPAREN Statement ELSE Statement	{CheckType($3->type, _TYPE::TYPE_BOOL);} |
-				WHILE LPAREN Exp RPAREN Statement	            {CheckType($3->type, _TYPE::TYPE_BOOL);} |
+				RETURN SC	                                    {if(DAVID_RESP.FindFuncRetType() != Type_::TYPE_VOID){output::errorMismatch(yylineno); exit(1);}} |
+				RETURN Exp SC	                                {
+																	NonTerminalType* Type = dynamic_cast<NonTerminalType*>($2);
+																	if((DAVID_RESP.FindFuncRetType() != Type->type) ||
+																	(!(Type->type == Type_::TYPE_BYTE && DAVID_RESP.GetCurFuncRetType() == TYPE::TYPE_INT)&&
+																	!(Type->type == Type_::TYPE_INT && DAVID_RESP.GetCurFuncRetType() == TYPE::TYPE_BYTE)))
+																	{output::errorMismatch(yylineno); exit(1);}
+																}  |
+				IF LPAREN Exp RPAREN IF_Marker Statement        {CheckType(dynamic_cast<NonTerminalType*>($3)->type, Type_::TYPE_BOOL); symbolTableManager.closeScope();} |
+				IF LPAREN Exp RPAREN IF_Marker Statement {symbolTableManager.closeScope();} ELSE {symbolTableManager.openScope();} Statement	{CheckType(dynamic_cast<NonTerminalType*>($3)->type, Type_::TYPE_BOOL); symbolTableManager.closeScope();} |
+				WHILE LPAREN Exp RPAREN {symbolTableManager.openScope();} Statement	            {CheckType(dynamic_cast<NonTerminalType*>($3)->type, Type_::TYPE_BOOL); symbolTableManager.closeScope();} |
 				BREAK SC	                                    {if (!(DAVID_RESP.WhileCondValid()) || DAVID_RESP.SwitchCondValid()) || ){output::errorUnexpectedBreak(yylineno); exit(1);}} |
 				CONTINUE SC	                                    {if (!DAVID_RESP.WhileCondValid()) {output::errorUnexpectedContinue(yylineno); exit(1);}}
->>>>>>> master
 				;
 	
-	    /// Create Call2Fun object
+	    // Create Call2Fun object
     Call: ID LPAREN ExpList RPAREN	                            {$$ = new Call2Fun(); checkIfFuncExist($1->name,$3->exprList)
                                                                 $$->name = $1->name; $$->expList = $1->exprList; $3->type = DAVID_RESP.FindRetType($1->name);} |
-		  ID LPAREN RPAREN	                                    {$$ = new Call2Fun(); checkIfFuncExist($1->name,std::vector<_TYPE>())
-                                                                $$->name = $1->name; $$->expList = std::vector<_TYPE>(); $1->type = DAVID_RESP.FindRetType($1->name);}
+		  ID LPAREN RPAREN	                                    {$$ = new Call2Fun(); checkIfFuncExist($1->name,std::vector<Type_>())
+                                                                $$->name = $1->name; $$->expList = std::vector<Type_>(); $1->type = DAVID_RESP.FindRetType($1->name);}
 		  ;
 		  /// create expressionList
-    ExpList: Exp	                                            {$$ = new expressionList(); $$->expressionList = std::vector<_TYPE>(1, $1->type);} |
+    ExpList: Exp	                                            {$$ = new expressionList(); $$->expressionList = std::vector<Type_>(1, $1->type);} |
 		   	 Exp COMMA ExpList	                                {$$ = new expressionList(); $$->expressionList =  $3->expressionList);
 		   	                                                    $$->expressionList.insert($3->expressionList);}
 			 ;
 			 
 			 
-    Type: INT	                                                {$$ = new RetType(); $$ -> type = _TYPE::TYPE_INT;} |
-		  BYTE	                                                {$$ = new RetType(); $$ -> type = _TYPE::TYPE_BYTE;} |
-       	  BOOL	                                                {$$ = new RetType(); $$ -> type = _TYPE::TYPE_BOOL;}
+    Type: INT	                                                {$$ = new RetType(); $$ -> type = Type_::TYPE_INT;} |
+		  BYTE	                                                {$$ = new RetType(); $$ -> type = Type_::TYPE_BYTE;} |
+       	  BOOL	                                                {$$ = new RetType(); $$ -> type = Type_::TYPE_BOOL;}
 		  ;
 		  
 		  
-    Exp: LPAREN Exp RPAREN	                                    {$$ = new RetType(); $$->type=$2->type;}	|
+    Exp: LPAREN Exp RPAREN	                                    {$$ = new RetType(); $$->type=Type->type;}	|
          Exp BINOP_PLUS_MINUS Exp	                            {$$ = new RetType(); checkIfNumType($1->type);
-                                                                if($3->type==_TYPE::TYPE_INT) {$$-<type==_TYPE::TYPE_INT;}
-                                                                else {$$-<type==_TYPE::TYPE_BYTE;}} |
+                                                                if($3->type==Type_::TYPE_INT) {$$-<type==Type_::TYPE_INT;}
+                                                                else {$$-<type==Type_::TYPE_BYTE;}} |
 		 Exp BINOP_MUL_DIV Exp	                                {$$ = new RetType(); checkIfNumType($1->type);
-                                                                if($3->type==_TYPE::TYPE_INT) {$$-<type==_TYPE::TYPE_INT;}
-                                                                 else {$$-<type==_TYPE::TYPE_BYTE;}} |
+                                                                if($3->type==Type_::TYPE_INT) {$$-<type==Type_::TYPE_INT;}
+                                                                 else {$$-<type==Type_::TYPE_BYTE;}} |
          ID          	                                        {$$ = new RetType();
-                                                                if((DAVID_RESP.findTypeForVar($1->name)==_TYPE::TYPE_NOT_VALID) || (DAVID_RESP.isFunc($1->name)))  |
+                                                                if((DAVID_RESP.findTypeForVar($1->name)==Type_::TYPE_NOT_VALID) || (DAVID_RESP.isFunc($1->name)))  |
                                                                 {output::errorUndef(yylineno, $1->name); exit(1);} $$->type = findTypeForVar($1->name);}
          Call        	                                        {$$ = new RetType(); ($$)->type = $1->type}; |
-         NUM         	                                        {$$ = new RetType(); ($$)->type = _TYPE::TYPE_INT ;} |
-         NUM B       	                                        {$$ = new RetType(); ($$)->type = _TYPE::TYPE_BYTE ;
+         NUM         	                                        {$$ = new RetType(); ($$)->type = Type_::TYPE_INT ;} |
+         NUM B       	                                        {$$ = new RetType(); ($$)->type = Type_::TYPE_BYTE ;
                                                                 if(std::stoi($1->value) >= 256) {output::errorByteTooLarge(yylineno, $1->value); exit(1);}} |
-         STRING      	                                        {$$ = new RetType(); ($$)->type = _TYPE::TYPE_STRING ;} |
-         TRUE        	                                        {$$ = new RetType(); ($$)->type = _TYPE::TYPE_BOOL ;} |
-         FALSE       	                                        {$$ = new RetType(); ($$)->type = _TYPE::TYPE_BOOL ;} |
-         NOT Exp     	                                        {$$ = new RetType(); CheckType($2->type, _TYPE::TYPE_BOOL); $$->type = _TYPE::TYPE_BOOL; } |
-         Exp AND Exp 	                                        {$$ = new RetType(); CheckType($2->type, _TYPE::TYPE_BOOL); CheckType($2->type, _TYPE::TYPE_BOOL);
-                                                                $$->type = _TYPE::TYPE_BOOL;} |
-         Exp OR Exp		                                        {$$ = new RetType();CheckType($2->type, _TYPE::TYPE_BOOL); CheckType($2->type, _TYPE::TYPE_BOOL);
-                                                                $$->type = _TYPE::TYPE_BOOL;} |
-         Exp RELOP_EQUALITY Exp                                 {$$ = new RetType(); checkIfNumType($1->type); checkIfNumType($1->type); $$->type = _TYPE::TYPE_BOOL; } |
-		 Exp RELOP_RELATIONAL Exp                               {$$ = new RetType(); checkIfNumType($1->type); checkIfNumType($1->type); $$->type = _TYPE::TYPE_BOOL; } |
-         LPAREN Type RPAREN Exp	                                {if((($2->type == _TYPE::TYPE_INT)  && ($4->Type == _TYPE::TYPE_BYTE))  ||
-                                                                (($2->type == _TYPE::TYPE_BYTE)  && ($4->Type == _TYPE::TYPE_BOOL)) ||
-                                                                (($2->type == $4->type)))
+         STRING      	                                        {$$ = new RetType(); ($$)->type = Type_::TYPE_STRING ;} |
+         TRUE        	                                        {$$ = new RetType(); ($$)->type = Type_::TYPE_BOOL ;} |
+         FALSE       	                                        {$$ = new RetType(); ($$)->type = Type_::TYPE_BOOL ;} |
+         NOT Exp     	                                        {$$ = new RetType(); CheckType(Type->type, Type_::TYPE_BOOL); $$->type = Type_::TYPE_BOOL; } |
+         Exp AND Exp 	                                        {$$ = new RetType(); CheckType(Type->type, Type_::TYPE_BOOL); CheckType(Type->type, Type_::TYPE_BOOL);
+                                                                $$->type = Type_::TYPE_BOOL;} |
+         Exp OR Exp		                                        {$$ = new RetType();CheckType(Type->type, Type_::TYPE_BOOL); CheckType(Type->type, Type_::TYPE_BOOL);
+                                                                $$->type = Type_::TYPE_BOOL;} |
+         Exp RELOP_EQUALITY Exp                                 {$$ = new RetType(); checkIfNumType($1->type); checkIfNumType($1->type); $$->type = Type_::TYPE_BOOL; } |
+		 Exp RELOP_RELATIONAL Exp                               {$$ = new RetType(); checkIfNumType($1->type); checkIfNumType($1->type); $$->type = Type_::TYPE_BOOL; } |
+         LPAREN Type RPAREN Exp	                                {if(((Type->type == Type_::TYPE_INT)  && ($4->Type == Type_::TYPE_BYTE))  ||
+                                                                ((Type->type == Type_::TYPE_BYTE)  && ($4->Type == Type_::TYPE_BOOL)) ||
+                                                                ((Type->type == $4->type)))
                                                                 {output::errorMismatch(yylino);exit(1);}
-                                                                $4->type= $2->type ;}
+                                                                $4->type= Type->type ;}
 		 ;
 		 
-	IF_Marker: /*epsilon*/ {symbolTableManager->openScope();}
+	IF_Marker: /*epsilon*/ {symbolTableManager.openScope();}
 		 
 
 %%
@@ -193,18 +195,16 @@ void yyerror(const char* message)
     output::errorSyn(yylineno);
     exit(1);
 }
-<<<<<<< HEAD
 
 void InsertPrintFunctions()
 {
-	std::shared_ptr<SymbolTable> currentTable = symbolTableManager->top();
+	std::shared_ptr<SymbolTable> currentTable = symbolTableManager.top();
 	std::vector<Type_> printParams = std::vector<Type_>(1, Type_::TYPE_STRING);
 	currentTable->Insert("print", Type_::TYPE_VOID, 0, printParams);
 	std::vector<Type_> printIParams = std::vector<Type_>(1, Type_::TYPE_INT);
 	currentTable->Insert("printi", Type_::TYPE_VOID, 0, printIParams);
 }
-=======
-void CheckType( _TYPE target, _TYPE given)
+void CheckType( Type_ target, Type_ given)
 {
     if ((target == Int && given == BYTE) || target == INT && given == BYTE))
     {
@@ -217,29 +217,29 @@ void CheckType( _TYPE target, _TYPE given)
     }
 }
 
-void checkIfVarExists(_TYPE type, string name)
+void checkIfVarExists(Type_ type, string name)
 {
-    if(DAVID_RESP.doesVarExist(type, name) == _TYPE_TYPE_NOT_VALID)
+    if(symbolTableManager.doesSymbolExists(type, name))
     {
         output::errorDef(yylino, name);
         exit(1);
     }
 }
 
-void MakeDeclaration(_TYPE type, string name)
+void MakeDeclaration(Type_ type, string name)
 {
     checkIfVarExists(type, name);
     DAVID_RESP.insertToSymbTable(type, name);
 }
 
-void checkIfFuncExist(string name, std:vector<_TYPE> params)
+void checkIfFuncExist(string name, std:vector<Type_> params)
 {
     if (!DavidResp.IsFuncExists(name, params)) // no matching name for func
     {
           output::errorUndefFunc(yylineno, name);
           exit(1);
     }
-    if(DAVID>RESP.DoesMatchingFuncExists(name, params) == _TYPE::TYPE_NOT_VALID) // no right params
+    if(DAVID>RESP.DoesMatchingFuncExists(name, params) == Type_::TYPE_NOT_VALID) // no right params
     {
        std::vector<string> real_params = DAVID_RESP.VecToParamList(params);
        output::errorPrototypeMismatch(yylino, name. real_params);
@@ -247,7 +247,7 @@ void checkIfFuncExist(string name, std:vector<_TYPE> params)
     }
 }
 
-void CheckIfAssignmentValid(_TYPE type1, std::string name, _TYPE type2)
+void CheckIfAssignmentValid(Type_ type1, std::string name, Type_ type2)
 }
 	checkType(type1,type2);
 	if(!DavidResp.isMatchingVar(type1, name))
@@ -257,13 +257,11 @@ void CheckIfAssignmentValid(_TYPE type1, std::string name, _TYPE type2)
 	}
 {
 
-void checkIfNumType(_TYPE type)
+void checkIfNumType(Type_ type)
 {
-	if((!type == _TYPE::TYPE_INT) && !(type == _TYPE::TYPE_BYTE))
+	if((!type == Type_::TYPE_INT) && !(type == Type_::TYPE_BYTE))
 	{
 		output::errorMismatch(yylineno);
         exit(1);
 	}
 }
-
->>>>>>> master

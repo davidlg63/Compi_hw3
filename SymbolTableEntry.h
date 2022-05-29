@@ -7,8 +7,7 @@
 
 #include <string>
 #include <vector>
-
-enum Type_{TYPE_STRING, TYPE_INT, TYPE_VOID};
+#include "Type_.h"
 
 struct SymbolTableEntry{
     std::string name;

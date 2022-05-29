@@ -24,6 +24,9 @@ public:
     void closeScope();
     int getOffset();
     bool IdIsAlreadyDeclared(int id);
+    bool doesSymbolExists(Type_ type, std::string name);
+    Type_ doesFunctionExist(std::string name, std::vector<Type_> args);
+
 };
 
 #endif //HW3_SYMBOLTABLESTACK_H

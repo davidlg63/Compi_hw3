@@ -8,7 +8,7 @@
 #include <string>
 #include <memory>
 #include <list>
-#include "NonTerminalBase.h"
+#include "SymbolBase.h"
 #include "SymbolTableEntry.h"
 
 class SymbolTable

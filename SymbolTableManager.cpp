@@ -27,6 +27,10 @@ void SymbolTableManager::pop() {
 }
 
 std::shared_ptr<SymbolTable> SymbolTableManager::top() {
+    if (_symbolTableStack.empty())
+    {
+        return nullptr;
+    }
     return _symbolTableStack.top();
 }
 
@@ -44,6 +48,22 @@ int SymbolTableManager::getOffset() {
     _offsetStack.pop();
     _offsetStack.push(offset + 1);
     return offset;
+}
+
+bool SymbolTableManager::doesSymbolExists(Type_ type, std::string name) {
+    std::shared_ptr<SymbolTable> currentTable = this->top();
+    while (nullptr != currentTable)
+    {
+        for(const SymbolTableEntry& entry : currentTable->table)
+        {
+            if(entry.name == name && entry.type == type)
+            {
+                return true;
+            }
+        }
+        currentTable = currentTable->parent;
+    }
+    return false;
 }
 
 
