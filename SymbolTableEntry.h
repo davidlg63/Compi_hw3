@@ -13,8 +13,13 @@ struct SymbolTableEntry{
     std::string name;
     Type_ type;
     int offset;
+    std::vector<Type_> params;
+    bool isFunction;
 
+    ///Use this ctor for regular symbols
     SymbolTableEntry(const std::string& name, const Type_ type, int offset);
+    ///Use this ctor for function symbols
+    SymbolTableEntry(const std::string& name, const Type_ type, int offset, const std::vector<Type_>& params);
 };
 
 #endif //HW3_OUTPUT_CPP_SYMBOLTABLEENTRY_H

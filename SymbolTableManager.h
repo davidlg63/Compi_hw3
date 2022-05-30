@@ -8,11 +8,20 @@
 #include <memory>
 #include <stack>
 #include "SymbolTable.h"
+#include "Type_.h"
+#include "Symbols.h"
+#include "SymbolTableEntry.h"
+#include "ScopeType.h"
+#define YYSTYPE SymbolBase*
 
 class SymbolTableManager
 {
     std::stack<std::shared_ptr<SymbolTable>> _symbolTableStack;
     std::stack<int> _offsetStack;
+
+    bool areSameParams(const std::vector<Type_>& actual, const std::vector<Type_>& expected);
+    void outputFunctionParams();
+    void outputFunctionDeclaration();
 
 public:
     SymbolTableManager();
@@ -22,11 +31,18 @@ public:
     std::shared_ptr<SymbolTable> top();
     void openScope();
     void closeScope();
+    void openWhileScope();
+    void openFuncScope();
     int getOffset();
-    bool IdIsAlreadyDeclared(int id);
-    bool doesSymbolExists(Type_ type, std::string name);
-    Type_ doesFunctionExist(std::string name, std::vector<Type_> args);
-
+    bool doesSymbolExists(Type_ type, const std::string& name);
+    Type_ doesFunctionExist(const std::string& functionName, const std::vector<Type_> params);
+    Type_ getFunctionReturnType(const std::string& functionName);
+    Type_ getVarType(const std::string& name);
+    bool isFunction (const std::string& name);
+    Type_ getCurrentScopeFunctionReturnType();
+    bool isWhileScoped();
+    std::vector<std::string> getParamList(const std::string& functionName);
+    static std::string ConvertTypeToString(Type_ type);
 };
 
 #endif //HW3_SYMBOLTABLESTACK_H
