@@ -66,15 +66,15 @@ void debug();
 	        ;
 
 
-    FuncDecl: FuncDeclaration FuncBody CLOSE_SCOPE	{};
+    FuncDecl: {symbolTableManager.openFuncScope();} FuncDeclaration FuncBody CLOSE_SCOPE	{};
 	
-	FuncDeclaration: {symbolTableManager.openFuncScope();} retType ID LPAREN Formals RPAREN 									{
-																							
-																										checkIfDoubleDeclare(dynamic_cast<Id*>($3)->name, dynamic_cast<paramList*>($5)->names_in_list);
-																										symbolTableManager.top()->InsertFunction(dynamic_cast<Id*>($3)->name, dynamic_cast<retType*>($2)->type, 0, dynamic_cast<paramList*>($5)->types_in_list, dynamic_cast<paramList*>($5)->names_in_list);
-																										delete dynamic_cast<retType*>($2); delete dynamic_cast<Id*>($3); delete dynamic_cast<paramList*>($5);
+	FuncDeclaration: retType ID LPAREN Formals RPAREN 												{
+																										checkIfDoubleDeclare(dynamic_cast<Id*>($2)->name, dynamic_cast<paramList*>($4)->names_in_list);
+																								
+																										symbolTableManager.top()->InsertFunction(dynamic_cast<Id*>($2)->name, dynamic_cast<retType*>($1)->type, 0, dynamic_cast<paramList*>($4)->types_in_list, dynamic_cast<paramList*>($4)->names_in_list);
+																										delete dynamic_cast<retType*>($1); delete dynamic_cast<Id*>($2); delete dynamic_cast<paramList*>($4);
 																									};
-	FuncBody: LBRACE OPEN_SCOPE Statements RBRACE 													{};
+	FuncBody: LBRACE Statements RBRACE 																{};
 
 
     retType: /*epsilon*/										{output::errorSyn(yylineno);exit(1);} |
@@ -141,7 +141,7 @@ void debug();
 																	delete dynamic_cast<retType*>($4); delete dynamic_cast<Id*>($2);
 																} |
 				ID ASSIGN Exp SC                	            {
-																	CheckIfAssignmentValid(dynamic_cast<retType*>($3)->type, dynamic_cast<Id*>($1)->name, dynamic_cast<retType*>($3)->type);
+																	CheckIfAssignmentValid(dynamic_cast<Id*>($1)->type, dynamic_cast<Id*>($1)->name, dynamic_cast<retType*>($3)->type);
 																	delete dynamic_cast<Id*>($1);delete dynamic_cast<retType*>($3);
 																} |
 				Call SC	                                        {
@@ -157,7 +157,7 @@ void debug();
 																		{output::errorMismatch(yylineno); exit(1);} 
 																	delete dynamic_cast<retType*>($2);
 																}  |
-				IF LPAREN Exp RPAREN IF_MARKER Statement                  {CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL);delete dynamic_cast<retType*>($3) ;} |
+				IF LPAREN Exp RPAREN IF_MARKER Statement                  {CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL); delete dynamic_cast<retType*>($3); symbolTableManager.closeScope();} |
 				IF LPAREN Exp RPAREN IF_MARKER Statement ELSE {symbolTableManager.closeScope(); symbolTableManager.openScope();} Statement	{CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL); delete dynamic_cast<retType*>($3); symbolTableManager.closeScope();} |
 				WHILE LPAREN Exp RPAREN WHILE_MARKER Statement	            			{(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL);delete dynamic_cast<retType*>($3);} |
 				BREAK SC	                                    											{if (!(symbolTableManager.isWhileScoped())){output::errorUnexpectedBreak(yylineno); exit(1);}} |
@@ -280,13 +280,16 @@ void yyerror(const char* message)
 
 void InsertPrintFunctions()
 {
-	std::shared_ptr<SymbolTable> currentTable = symbolTableManager.top();
+	std::shared_ptr<SymbolTable> globalScope = symbolTableManager.top();
 	std::vector<Type_> printParams = std::vector<Type_>(1, Type_::TYPE_STRING);
-	std::vector<std::string> printNames = std::vector<std::string>(1, "msg");
-	currentTable->InsertFunction("print", Type_::TYPE_VOID, 0, printParams, printNames);
+	//std::vector<std::string> printNames = std::vector<std::string>(1, "msg");
+	SymbolTableEntry entry = SymbolTableEntry("print", Type_::TYPE_VOID, 0, printParams); 
+	globalScope->table.push_back(entry);
+	
 	std::vector<Type_> printIParams = std::vector<Type_>(1, Type_::TYPE_INT);
-	std::vector<std::string> printINames = std::vector<std::string>(1, "num");
-	currentTable->InsertFunction("printi", Type_::TYPE_VOID, 0, printIParams, printINames);
+	//std::vector<std::string> printINames = std::vector<std::string>(1, "num");
+	entry = SymbolTableEntry("printi", Type_::TYPE_VOID, 0, printIParams);
+	globalScope->table.push_back(entry);
 }
 
 void CheckType( Type_ target, Type_ given)

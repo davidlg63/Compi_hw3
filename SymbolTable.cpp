@@ -14,26 +14,20 @@ void SymbolTable::InsertFunction(const std::string &name, const Type_ type, cons
 {
     int paramsOffset = -1;
     auto itParamsIds = paramsIdentifiers.begin();
+    this->scopeType = FUNC_SCOPE;
     for(Type_ param : params)
     {
         SymbolTableEntry paramSymbol = SymbolTableEntry(*itParamsIds, param, paramsOffset);
-        table.push_back(paramSymbol);
+        table.push_front(paramSymbol);
         paramsOffset--;
         itParamsIds++;
     }
     SymbolTableEntry newEntry = SymbolTableEntry(name, type, offset, params);
-    table.push_front(newEntry);
+    parent->table.push_back(newEntry); //We want the entry of the function itself to be added to the parent scope.
 }
 
 void SymbolTable::Insert(const std::string &name, const Type_ type, const int offset) {
     SymbolTableEntry newEntry = SymbolTableEntry(name, type, offset);
-    table.push_front(newEntry);
-}
-
-void SymbolTable::getArgsTypesAsStrings(std::vector<std::string> &arg_types) {
-    for(const auto& entry : table)
-    {
-        arg_types.push_back(SymbolTableManager::ConvertTypeToString(entry.type));
-    }
+    table.push_back(newEntry);
 }
 

@@ -57,14 +57,11 @@ void SymbolTableManager::openFuncScope() {
 void SymbolTableManager::closeScope() {
     output::endScope();
     shared_ptr<SymbolTable> scope = top();
-    if (FUNC_SCOPE == scope->scopeType)
-    {
-        outputFunctionParams();
-        outputFunctionDeclaration();
-    } else
-    {
-        for(const auto& entry : scope->table)
-        {
+    outputFunctionParamsInScope();
+    for (auto &entry : scope->table) {
+        if (entry.isFunction) {
+            outputFunctionDeclaration(entry);
+        } else if(entry.offset >= 0){
             output::printID(entry.name, entry.offset, ConvertTypeToString(entry.type));
         }
     }
@@ -243,7 +240,7 @@ std::string SymbolTableManager::ConvertTypeToString(Type_ type) {
         }
 }
 
-void SymbolTableManager::outputFunctionParams() {
+void SymbolTableManager::outputFunctionParamsInScope() {
     for(const auto& entry : top()->table)
     {
         if(entry.offset < 0)
@@ -253,18 +250,12 @@ void SymbolTableManager::outputFunctionParams() {
     }
 }
 
-void SymbolTableManager::outputFunctionDeclaration() {
-    auto scope = top();
-    for(const auto& entry : scope->table)
-    {
-        if(entry.offset == 0)
-        {
-            vector<string> arg_types = vector<string>();
-            scope->getArgsTypesAsStrings(arg_types);
-            std::string type = output::makeFunctionType(ConvertTypeToString(entry.type), arg_types);
-            output::printID(entry.name, entry.offset, ConvertTypeToString(entry.type));
-        }
-    }
+void SymbolTableManager::outputFunctionDeclaration(SymbolTableEntry& entry) {
+    vector<string> arg_types = vector<string>();
+    entry.getArgsTypesAsStrings(arg_types);
+    string type = ConvertTypeToString(entry.type);
+    type = output::makeFunctionType(type, arg_types);
+    output::printID(entry.name, entry.offset, type);
 }
 
 

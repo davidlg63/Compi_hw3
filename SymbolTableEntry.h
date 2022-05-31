@@ -20,6 +20,7 @@ struct SymbolTableEntry{
     SymbolTableEntry(const std::string& name, const Type_ type, int offset);
     ///Use this ctor for function symbols
     SymbolTableEntry(const std::string& name, const Type_ type, int offset, const std::vector<Type_>& params);
+    void getArgsTypesAsStrings(std::vector<std::string>&);
 };
 
 #endif //HW3_OUTPUT_CPP_SYMBOLTABLEENTRY_H

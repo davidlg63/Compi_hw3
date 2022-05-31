@@ -23,7 +23,7 @@ public:
     void Insert(const std::string& name, const Type_ type, const int offset);
     void InsertFunction(const std::string& name, const Type_ type, const int offset, const std::vector<Type_>& params = std::vector<Type_>()
             , const std::vector<std::string>& paramsIdentifiers = std::vector<std::string>());
-    void getArgsTypesAsStrings(std::vector<std::string>&);
+
 };
 
 #endif //HW3_SYMBOLTABLENODE_H

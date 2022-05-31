@@ -20,8 +20,8 @@ class SymbolTableManager
     std::stack<int> _offsetStack;
 
     bool areSameParams(const std::vector<Type_>& actual, const std::vector<Type_>& expected);
-    void outputFunctionParams();
-    void outputFunctionDeclaration();
+    void outputFunctionParamsInScope();
+    void outputFunctionDeclaration(SymbolTableEntry& entry);
 
 public:
     SymbolTableManager();
