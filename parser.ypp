@@ -162,11 +162,13 @@ void debug();
 				CONTINUE SC	                                    											{if (!symbolTableManager.isWhileScoped()) {output::errorUnexpectedContinue(yylineno); exit(1);}}
 				;
 				
-    Call: ID LPAREN ExpList RPAREN	                            {$$ = new call2Fun(); checkIfFuncExist(dynamic_cast<Id*>($1)->name,dynamic_cast<expressionList*>($3)->exprList);
-                                                                dynamic_cast<call2Fun*>($$)->name = dynamic_cast<Id*>($1)->name;
-                                                                dynamic_cast<call2Fun*>($$)->expList = dynamic_cast<expressionList*>($3)->exprList;
-                                                                dynamic_cast<call2Fun*>($$)->type = symbolTableManager.getFunctionReturnType(dynamic_cast<Id*>($1)->name);
-                                                                delete dynamic_cast<Id*>($1); delete dynamic_cast<expressionList*>($3);} |
+    Call: ID LPAREN ExpList RPAREN	                            {
+																	$$ = new call2Fun(); checkIfFuncExist(dynamic_cast<Id*>($1)->name,dynamic_cast<expressionList*>($3)->exprList);
+																	dynamic_cast<call2Fun*>($$)->name = dynamic_cast<Id*>($1)->name;
+																	dynamic_cast<call2Fun*>($$)->expList = dynamic_cast<expressionList*>($3)->exprList;
+																	dynamic_cast<call2Fun*>($$)->type = symbolTableManager.getFunctionReturnType(dynamic_cast<Id*>($1)->name);
+																	delete dynamic_cast<Id*>($1); delete dynamic_cast<expressionList*>($3);
+																} |
 		  ID LPAREN RPAREN	                                    {
 																	$$ = new call2Fun(); 
 																	checkIfFuncExist(dynamic_cast<Id*>($1)->name,std::vector<Type_>());
@@ -226,8 +228,8 @@ void debug();
          NUM         	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_INT ;
                                                                 delete dynamic_cast<Num*>($1);} |
          NUM B       	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_BYTE ;
-                                                                if(std::stoi(dynamic_cast<Num*>($1)->value) >= 256) {output::errorByteTooLarge(yylineno, dynamic_cast<Num*>($1)->value);
-                                                                exit(1);} delete dynamic_cast<Num*>($1);} |
+                                                                if(std::stoi(dynamic_cast<Num*>($1)->value) >= 256) {output::errorByteTooLarge(yylineno, dynamic_cast<Num*>($1)->value); exit(1);} 
+																delete dynamic_cast<Num*>($1);} |
          STRING      	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_STRING ;} |
          TRUE        	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_BOOL ;} |
          FALSE       	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_BOOL ;} |
@@ -292,7 +294,7 @@ void InsertPrintFunctions()
 
 void CheckType( Type_ target, Type_ given)
 {
-    if ((target == TYPE_INT && given == TYPE_BYTE) || (target == TYPE_BYTE && given == TYPE_INT))
+    if ((target == TYPE_INT && given == TYPE_BYTE))
     {
         return;
     }
@@ -346,7 +348,7 @@ void CheckIfAssignmentValid(const std::string& name, Type_ type2)
 
 void checkIfNumType(Type_ type)
 {
-	if((!type == Type_::TYPE_INT) && !(type == Type_::TYPE_BYTE))
+	if((type != Type_::TYPE_INT) && (type != Type_::TYPE_BYTE))
 	{
 		output::errorMismatch(yylineno);
         exit(1);

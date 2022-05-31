@@ -172,9 +172,9 @@ bool SymbolTableManager::areSameParams(const std::vector<Type_>& actual, const s
         return false;
     }
     auto itActual = actual.begin();
-    for(auto itExpected : expected)
+    for(auto itExpected = expected.begin(); itExpected != expected.end(); itExpected++)
     {
-        if(*itActual != itExpected && !(*itActual == Type_::TYPE_BYTE && itExpected == Type_::TYPE_INT))
+        if(*itActual != *itExpected && !(*itActual == Type_::TYPE_BYTE && *itExpected == Type_::TYPE_INT))
         {
             return false;
         }
