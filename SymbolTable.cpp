@@ -15,6 +15,7 @@ void SymbolTable::InsertFunction(const std::string &name, const Type_ type, cons
     int paramsOffset = -1;
     auto itParamsIds = paramsIdentifiers.begin();
     this->scopeType = FUNC_SCOPE;
+    functionRetType = type;
     for(Type_ param : params)
     {
         SymbolTableEntry paramSymbol = SymbolTableEntry(*itParamsIds, param, paramsOffset);

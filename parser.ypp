@@ -14,10 +14,11 @@ void CheckType( Type_ target, Type_ given);
 void checkIfVarExists(Type_ type, const std::string& name);
 void MakeDeclaration(Type_ type, const std::string& name);
 void checkIfFuncExist(const std::string& name, std::vector<Type_> params);
-void CheckIfAssignmentValid(Type_ type1, const std::string& name, Type_ type2);
+void CheckIfAssignmentValid(const std::string& name, Type_ type2);
 void checkIfNumType(Type_ type);
 void InsertPrintFunctions();
 void checkIfDoubleDeclare(const std::string& name, std::vector<std::string>names_in_list);
+bool isRetTypeMismatch(Type_ expType);
 void debug();
 %}
 
@@ -141,7 +142,7 @@ void debug();
 																	delete dynamic_cast<retType*>($4); delete dynamic_cast<Id*>($2);
 																} |
 				ID ASSIGN Exp SC                	            {
-																	CheckIfAssignmentValid(dynamic_cast<Id*>($1)->type, dynamic_cast<Id*>($1)->name, dynamic_cast<retType*>($3)->type);
+																	CheckIfAssignmentValid(dynamic_cast<Id*>($1)->name, dynamic_cast<retType*>($3)->type);
 																	delete dynamic_cast<Id*>($1);delete dynamic_cast<retType*>($3);
 																} |
 				Call SC	                                        {
@@ -150,10 +151,7 @@ void debug();
 				RETURN SC	                                    {
 																	if(symbolTableManager.getCurrentScopeFunctionReturnType() != Type_::TYPE_VOID){output::errorMismatch(yylineno); exit(1);}} |
 				RETURN Exp SC	                                {
-																	if((symbolTableManager.getCurrentScopeFunctionReturnType() != dynamic_cast<retType*>($2)->type) ||
-																	(!(dynamic_cast<retType*>($2)->type == Type_::TYPE_BYTE && (symbolTableManager.getCurrentScopeFunctionReturnType() == Type_::TYPE_INT)&&
-																	!(dynamic_cast<retType*>($2)->type == Type_::TYPE_INT && symbolTableManager.getCurrentScopeFunctionReturnType() == Type_::TYPE_BYTE)))
-																	|| Type_::TYPE_VOID == symbolTableManager.getCurrentScopeFunctionReturnType())
+																	if(isRetTypeMismatch(dynamic_cast<retType*>($2)->type))
 																		{output::errorMismatch(yylineno); exit(1);} 
 																	delete dynamic_cast<retType*>($2);
 																}  |
@@ -335,14 +333,15 @@ void checkIfFuncExist(const std::string& name, std::vector<Type_> params)
     }
 }
 
-void CheckIfAssignmentValid(Type_ type1, const std::string& name, Type_ type2)
+void CheckIfAssignmentValid(const std::string& name, Type_ type2)
 {
-	CheckType(type1,type2);
-	if(false == symbolTableManager.doesSymbolExists(type1, name))
+	Type_ type1 = symbolTableManager.getVarType(name);
+	if(Type_::TYPE_NOT_VALID == type1)
 	{
 		output::errorUndef(yylineno, name);
 		exit(1);
 	}
+	CheckType(type1,type2);
 }
 
 void checkIfNumType(Type_ type)
@@ -375,6 +374,17 @@ void checkIfDoubleDeclare(const std::string& name, std::vector<std::string>names
             exit(1);
         }
     }
+}
+
+bool isRetTypeMismatch(Type_ expType)
+{
+	return ((
+				(symbolTableManager.getCurrentScopeFunctionReturnType() != expType) &&
+				(
+					expType != Type_::TYPE_BYTE || (symbolTableManager.getCurrentScopeFunctionReturnType() != Type_::TYPE_INT)
+				)
+			)
+			|| (Type_::TYPE_VOID == symbolTableManager.getCurrentScopeFunctionReturnType()));
 }
 
 void debug()

@@ -18,6 +18,7 @@ public:
     std::list<SymbolTableEntry> table;
     std::shared_ptr<SymbolTable> parent;
     ScopeType scopeType;
+    Type_ functionRetType;
 
     explicit SymbolTable(std::shared_ptr<SymbolTable> parent, ScopeType = ScopeType::OTHER_SCOPE);
     void Insert(const std::string& name, const Type_ type, const int offset);

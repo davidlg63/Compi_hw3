@@ -158,12 +158,8 @@ bool SymbolTableManager::isFunction(const std::string &name) {
 
 Type_ SymbolTableManager::getCurrentScopeFunctionReturnType() {
     auto currentScope = this->top();
-    for (const auto& entry : currentScope->table)
-    {
-        if(entry.isFunction)
-        {
-            return entry.type;
-        }
+    if(currentScope->scopeType == FUNC_SCOPE) {
+        return currentScope->functionRetType;
     }
     return TYPE_NOT_VALID;
 }
