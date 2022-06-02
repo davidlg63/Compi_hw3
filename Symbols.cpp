@@ -3,9 +3,6 @@
 //
 #include "Symbols.h"
 
-void expressionList::insert(const std::vector<Type_>& list) {
-    for(const auto& type : list)
-    {
-        exprList.push_back(type);
-    }
+void expressionList::insertElement(const Type_ expType) {
+        exprList.insert(exprList.begin(), expType);
 }

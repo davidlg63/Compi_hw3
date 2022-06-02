@@ -19,7 +19,7 @@ void SymbolTable::InsertFunction(const std::string &name, const Type_ type, cons
     for(Type_ param : params)
     {
         SymbolTableEntry paramSymbol = SymbolTableEntry(*itParamsIds, param, paramsOffset);
-        table.push_front(paramSymbol);
+        table.push_back(paramSymbol);
         paramsOffset--;
         itParamsIds++;
     }

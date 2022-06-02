@@ -19,6 +19,8 @@ void checkIfNumType(Type_ type);
 void InsertPrintFunctions();
 void checkIfDoubleDeclare(const std::string& name, std::vector<std::string>names_in_list);
 bool isRetTypeMismatch(Type_ expType);
+void checkIfMainRedefined(const std::string& functionName);
+void CheckIfValidTypeForVar(const Type_ type_to_assign);
 void debug();
 %}
 
@@ -70,6 +72,7 @@ void debug();
     FuncDecl: {symbolTableManager.openFuncScope();} FuncDeclaration FuncBody CLOSE_SCOPE	{};
 	
 	FuncDeclaration: retType ID LPAREN Formals RPAREN 												{
+																										checkIfMainRedefined(dynamic_cast<Id*>($2)->name);
 																										checkIfDoubleDeclare(dynamic_cast<Id*>($2)->name, dynamic_cast<paramList*>($4)->names_in_list);
 																								
 																										symbolTableManager.top()->InsertFunction(dynamic_cast<Id*>($2)->name, dynamic_cast<retType*>($1)->type, 0, dynamic_cast<paramList*>($4)->types_in_list, dynamic_cast<paramList*>($4)->names_in_list);
@@ -132,12 +135,13 @@ void debug();
 																	MakeDeclaration(dynamic_cast<retType*>($1)->type, dynamic_cast<Id*>($2)->name);
 																	delete dynamic_cast<retType*>($1); delete dynamic_cast<Id*>($2);
 																} |
-				Type ID ASSIGN Exp SC	                        {
+				Type ID ASSIGN Exp SC	                        { 
 																	CheckType(dynamic_cast<retType*>($1)->type, dynamic_cast<retType*>($4)->type);
 																	MakeDeclaration(dynamic_cast<retType*>($1)->type, dynamic_cast<Id*>($2)->name);
 																	delete dynamic_cast<retType*>($1); delete dynamic_cast<Id*>($2); delete dynamic_cast<retType*>($4);
 																} |
 				AUTO ID ASSIGN Exp SC	                        {
+																	CheckIfValidTypeForVar(dynamic_cast<retType*>($4)->type);
 																	MakeDeclaration(dynamic_cast<retType*>($4)->type, dynamic_cast<Id*>($2)->name);
 																	delete dynamic_cast<retType*>($4); delete dynamic_cast<Id*>($2);
 																} |
@@ -155,11 +159,13 @@ void debug();
 																		{output::errorMismatch(yylineno); exit(1);} 
 																	delete dynamic_cast<retType*>($2);
 																}  |
-				IF LPAREN Exp RPAREN IF_MARKER Statement                  {CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL); delete dynamic_cast<retType*>($3); symbolTableManager.closeScope();} |
-				IF LPAREN Exp RPAREN IF_MARKER Statement ELSE {symbolTableManager.closeScope(); symbolTableManager.openScope();} Statement	{CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL); delete dynamic_cast<retType*>($3); symbolTableManager.closeScope();} |
-				WHILE LPAREN Exp RPAREN WHILE_MARKER Statement	            			{(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL);delete dynamic_cast<retType*>($3);} |
-				BREAK SC	                                    											{if (!(symbolTableManager.isWhileScoped())){output::errorUnexpectedBreak(yylineno); exit(1);}} |
-				CONTINUE SC	                                    											{if (!symbolTableManager.isWhileScoped()) {output::errorUnexpectedContinue(yylineno); exit(1);}}
+				IF LPAREN Bool_Exp RPAREN  Statement                {
+																			symbolTableManager.closeScope();
+																	} |
+				IF LPAREN Bool_Exp RPAREN  Statement ELSE {symbolTableManager.closeScope(); symbolTableManager.openScope();} Statement CLOSE_SCOPE							{} |
+				WHILE LPAREN Exp RPAREN {symbolTableManager.openWhileScope(); CheckType(dynamic_cast<retType*>($3)->type, Type_::TYPE_BOOL);} Statement CLOSE_SCOPE	            																{delete dynamic_cast<retType*>($3);} |
+				BREAK SC	                                    																																												{if (!(symbolTableManager.isWhileScoped())){output::errorUnexpectedBreak(yylineno); exit(1);}} |
+				CONTINUE SC	                                    																																												{if (!symbolTableManager.isWhileScoped()) {output::errorUnexpectedContinue(yylineno); exit(1);}}
 				;
 				
     Call: ID LPAREN ExpList RPAREN	                            {
@@ -186,7 +192,7 @@ void debug();
 		   	 Exp COMMA ExpList	                                {
 																	$$ = new expressionList();
 																	dynamic_cast<expressionList*>($$)->exprList = dynamic_cast<expressionList*>($3)->exprList;
-																	dynamic_cast<expressionList*>($$)->insert(dynamic_cast<expressionList*>($3)->exprList);
+																	dynamic_cast<expressionList*>($$)->insertElement(dynamic_cast<retType*>($1)->type);
 																	delete dynamic_cast<expressionList*>($3);
 																}
 			 ;
@@ -227,7 +233,7 @@ void debug();
                                                                 delete dynamic_cast<call2Fun*>($1);} |
          NUM         	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_INT ;
                                                                 delete dynamic_cast<Num*>($1);} |
-         NUM B       	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_BYTE ;
+         NUM B       	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_BYTE;
                                                                 if(std::stoi(dynamic_cast<Num*>($1)->value) >= 256) {output::errorByteTooLarge(yylineno, dynamic_cast<Num*>($1)->value); exit(1);} 
 																delete dynamic_cast<Num*>($1);} |
          STRING      	                                        {$$ = new retType(); dynamic_cast<retType*>($$)->type = Type_::TYPE_STRING ;} |
@@ -250,20 +256,18 @@ void debug();
                                                                 checkIfNumType(dynamic_cast<retType*>($3)->type); dynamic_cast<retType*>($$)->type = Type_::TYPE_BOOL;
                                                                 delete dynamic_cast<retType*>($3); delete dynamic_cast<retType*>($1) ;} | 
          LPAREN Type RPAREN Exp	                                {
-																	/*$$ = new retType();
+																	$$ = new retType();
 																	if(!(((dynamic_cast<retType*>($2)->type == Type_::TYPE_INT)  && (dynamic_cast<retType*>($4)->type == Type_::TYPE_BYTE))
-																	||  ((dynamic_cast<retType*>($2)->type == Type_::TYPE_BYTE)  && (dynamic_cast<retType*>($4)->type == Type_::TYPE_BOOL))
+																	||  ((dynamic_cast<retType*>($2)->type == Type_::TYPE_BYTE)  && (dynamic_cast<retType*>($4)->type == Type_::TYPE_INT))
 																	|| ((dynamic_cast<retType*>($2)->type == dynamic_cast<retType*>($4)->type))))
 																	{output::errorMismatch(yylineno);exit(1);}
 																	dynamic_cast<retType*>($$)->type= dynamic_cast<retType*>($2)->type ;
-																	delete dynamic_cast<retType*>($2); delete dynamic_cast<retType*>($4); */
+																	delete dynamic_cast<retType*>($2); delete dynamic_cast<retType*>($4);
 																}
 	;
 	
-	IF_MARKER: /*epsilon*/ {symbolTableManager.openScope();};
-	WHILE_MARKER: /*epsilon*/ {symbolTableManager.openWhileScope();};
-	OPEN_SCOPE: {symbolTableManager.openScope();};
 	CLOSE_SCOPE: {symbolTableManager.closeScope();};
+	Bool_Exp: Exp {CheckType(dynamic_cast<retType*>($1)->type, Type_::TYPE_BOOL); delete dynamic_cast<retType*>($1); symbolTableManager.openScope();};
 
 %%
 
@@ -282,12 +286,10 @@ void InsertPrintFunctions()
 {
 	std::shared_ptr<SymbolTable> globalScope = symbolTableManager.top();
 	std::vector<Type_> printParams = std::vector<Type_>(1, Type_::TYPE_STRING);
-	//std::vector<std::string> printNames = std::vector<std::string>(1, "msg");
 	SymbolTableEntry entry = SymbolTableEntry("print", Type_::TYPE_VOID, 0, printParams); 
 	globalScope->table.push_back(entry);
 	
 	std::vector<Type_> printIParams = std::vector<Type_>(1, Type_::TYPE_INT);
-	//std::vector<std::string> printINames = std::vector<std::string>(1, "num");
 	entry = SymbolTableEntry("printi", Type_::TYPE_VOID, 0, printIParams);
 	globalScope->table.push_back(entry);
 }
@@ -380,13 +382,30 @@ void checkIfDoubleDeclare(const std::string& name, std::vector<std::string>names
 
 bool isRetTypeMismatch(Type_ expType)
 {
-	return ((
-				(symbolTableManager.getCurrentScopeFunctionReturnType() != expType) &&
-				(
-					expType != Type_::TYPE_BYTE || (symbolTableManager.getCurrentScopeFunctionReturnType() != Type_::TYPE_INT)
-				)
-			)
+	return (
+			((symbolTableManager.getCurrentScopeFunctionReturnType() != expType) &&
+			
+			(expType != Type_::TYPE_BYTE || (symbolTableManager.getCurrentScopeFunctionReturnType() != Type_::TYPE_INT)))
+			
 			|| (Type_::TYPE_VOID == symbolTableManager.getCurrentScopeFunctionReturnType()));
+}
+
+void checkIfMainRedefined(const std::string& functionName)
+{
+	if(symbolTableManager.isFunction(functionName))
+	{
+		output::errorDef(yylineno, functionName);
+		exit(1);
+	}
+}
+
+void CheckIfValidTypeForVar(const Type_ type_to_assign)
+{
+	if(TYPE_VOID == type_to_assign || TYPE_STRING == type_to_assign || TYPE_NOT_VALID == type_to_assign)
+	{
+		output::errorMismatch(yylineno);
+		exit(1);
+	}
 }
 
 void debug()

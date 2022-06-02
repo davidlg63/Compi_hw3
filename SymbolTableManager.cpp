@@ -54,6 +54,7 @@ void SymbolTableManager::openFuncScope() {
     pushOnNewScope(newTable);
 }
 
+
 void SymbolTableManager::closeScope() {
     output::endScope();
     shared_ptr<SymbolTable> scope = top();
@@ -81,7 +82,7 @@ bool SymbolTableManager::doesSymbolExists(Type_ type, const std::string& name) {
     {
         for(const SymbolTableEntry& entry : currentTable->table)
         {
-            if(entry.offset > 0 && entry.name == name && entry.type == type)
+            if(entry.name == name)
             {
                 return true;
             }
@@ -97,7 +98,7 @@ Type_ SymbolTableManager::doesFunctionExist(const std::string &functionName, con
     {
         for(const SymbolTableEntry& entry : currentTable->table)
         {
-            if(entry.isFunction && entry.name == functionName && areSameParams(entry.params, params))
+            if(entry.isFunction && entry.name == functionName && areSameParams(params, entry.params))
             {
                 return entry.type;
             }
@@ -158,8 +159,13 @@ bool SymbolTableManager::isFunction(const std::string &name) {
 
 Type_ SymbolTableManager::getCurrentScopeFunctionReturnType() {
     auto currentScope = this->top();
-    if(currentScope->scopeType == FUNC_SCOPE) {
-        return currentScope->functionRetType;
+    while(currentScope != nullptr)
+    {
+        if(FUNC_SCOPE == currentScope->scopeType)
+        {
+            return currentScope->functionRetType;
+        }
+        currentScope = currentScope->parent;
     }
     return TYPE_NOT_VALID;
 }
@@ -253,7 +259,6 @@ void SymbolTableManager::outputFunctionDeclaration(SymbolTableEntry& entry) {
     type = output::makeFunctionType(type, arg_types);
     output::printID(entry.name, entry.offset, type);
 }
-
 
 
 

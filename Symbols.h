@@ -42,7 +42,7 @@ struct expressionList : public SymbolBase
 {
     std::vector<Type_> exprList;
     expressionList() = default;
-    void insert(const std::vector<Type_>& list);
+    void insertElement(const Type_ expType);
 };
 
 
